@@ -1,0 +1,41 @@
+# Terraform / OpenTofu
+*.tfstate
+*.tfstate.backup
+*.tfstate.*.backup
+.terraform/
+.terraform.lock.hcl
+crash.log
+crash.*.log
+*.tfvars
+!*.tfvars.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Secrets (create your own terraform.tfvars)
+# terraform.tfvars contains tokens/passwords — NEVER commit
+
+# SSH keys
+*.pem
+id_rsa*
+id_ed25519*
+
+# Environment files
+.env
+.env.*
+*.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Logs
+*.log

@@ -1,0 +1,27 @@
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: enp4s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT group default qlen 1000
+    link/ether 74:56:3c:2a:24:fc brd ff:ff:ff:ff:ff:ff
+    altname enx74563c2a24fc
+3: virbr3: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN mode DEFAULT group default qlen 1000
+    link/ether 52:54:00:86:7d:a1 brd ff:ff:ff:ff:ff:ff
+4: virbr0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN mode DEFAULT group default qlen 1000
+    link/ether 52:54:00:8b:09:a0 brd ff:ff:ff:ff:ff:ff
+5: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN mode DEFAULT group default 
+    link/ether 2a:00:9a:e6:a8:42 brd ff:ff:ff:ff:ff:ff
+6: br-f4451fb13f61: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DEFAULT group default 
+    link/ether be:50:f4:49:59:11 brd ff:ff:ff:ff:ff:ff
+7: veth089bf14@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-f4451fb13f61 state UP mode DEFAULT group default 
+    link/ether d6:9b:a3:fb:ec:79 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+8: veth71089b1@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-f4451fb13f61 state UP mode DEFAULT group default 
+    link/ether 7e:0f:48:83:78:3e brd ff:ff:ff:ff:ff:ff link-netnsid 1
+9: flannel.1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UNKNOWN mode DEFAULT group default 
+    link/ether 0a:6b:3e:ef:53:26 brd ff:ff:ff:ff:ff:ff
+10: cni0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP mode DEFAULT group default qlen 1000
+    link/ether d2:5e:10:0f:8c:b1 brd ff:ff:ff:ff:ff:ff
+11: veth74abdbb6@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue master cni0 state UP mode DEFAULT group default 
+    link/ether 32:ad:64:bb:0f:08 brd ff:ff:ff:ff:ff:ff link-netns cni-02c3eae6-2589-3a4a-848c-7ce433bcc5b9
+12: vethb473b2f4@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue master cni0 state UP mode DEFAULT group default 
+    link/ether 4a:33:4d:85:b4:e9 brd ff:ff:ff:ff:ff:ff link-netns cni-80462b5e-68a1-f43a-fe8f-3a409ef70fd0
+13: veth5f2023ae@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue master cni0 state UP mode DEFAULT group default 
+    link/ether c2:59:63:22:59:f4 brd ff:ff:ff:ff:ff:ff link-netns cni-c4cbfc77-430a-e9da-699f-c27630d77fdf

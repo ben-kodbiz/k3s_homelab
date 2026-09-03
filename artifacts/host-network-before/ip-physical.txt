@@ -1,0 +1,35 @@
+# captured 2026-09-04T01:10:46+08:00
+2: enp4s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 74:56:3c:2a:24:fc brd ff:ff:ff:ff:ff:ff
+    altname enx74563c2a24fc
+    inet 192.168.0.74/24 brd 192.168.0.255 scope global dynamic noprefixroute enp4s0
+       valid_lft 77271sec preferred_lft 77271sec
+
+default via 192.168.0.1 dev enp4s0 proto dhcp src 192.168.0.74 metric 100 
+
+# all IPv4 addrs
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: enp4s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    altname enx74563c2a24fc
+    inet 192.168.0.74/24 brd 192.168.0.255 scope global dynamic noprefixroute enp4s0
+       valid_lft 77271sec preferred_lft 77271sec
+3: virbr3: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default qlen 1000
+    inet 10.20.0.1/16 brd 10.20.255.255 scope global virbr3
+       valid_lft forever preferred_lft forever
+4: virbr0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default qlen 1000
+    inet 192.168.122.1/24 brd 192.168.122.255 scope global virbr0
+       valid_lft forever preferred_lft forever
+5: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default 
+    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+       valid_lft forever preferred_lft forever
+6: br-f4451fb13f61: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    inet 172.18.0.1/16 brd 172.18.255.255 scope global br-f4451fb13f61
+       valid_lft forever preferred_lft forever
+9: flannel.1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UNKNOWN group default 
+    inet 10.42.0.0/32 scope global flannel.1
+       valid_lft forever preferred_lft forever
+10: cni0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP group default qlen 1000
+    inet 10.42.0.1/24 brd 10.42.0.255 scope global cni0
+       valid_lft forever preferred_lft forever

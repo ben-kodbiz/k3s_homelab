@@ -1,0 +1,14 @@
+DEVICE           TYPE      STATE                   CONNECTION         
+enp4s0           ethernet  connected               Wired connection 1 
+br-f4451fb13f61  bridge    connected (externally)  br-f4451fb13f61    
+cni0             bridge    connected (externally)  cni0               
+lo               loopback  connected (externally)  lo                 
+flannel.1        vxlan     connected (externally)  flannel.1          
+docker0          bridge    connected (externally)  docker0            
+virbr0           bridge    connected (externally)  virbr0             
+virbr3           bridge    connected (externally)  virbr3             
+veth089bf14      ethernet  connected (externally)  veth089bf14        
+veth5f2023ae     ethernet  connected (externally)  veth5f2023ae       
+veth71089b1      ethernet  connected (externally)  veth71089b1        
+veth74abdbb6     ethernet  connected (externally)  veth74abdbb6       
+vethb473b2f4     ethernet  connected (externally)  vethb473b2f4       

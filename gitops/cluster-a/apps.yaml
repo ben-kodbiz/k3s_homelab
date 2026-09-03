@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cluster-a-apps
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - name: nginx
+        namespace: default
+      - name: httpbin
+        namespace: default
+  template:
+    metadata:
+      name: '{{name}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/example/k3slab.git
+        targetRevision: HEAD
+        path: 'gitops/apps/{{name}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true

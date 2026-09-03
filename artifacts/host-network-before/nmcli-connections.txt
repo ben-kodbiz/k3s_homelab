@@ -1,0 +1,14 @@
+NAME                UUID                                  TYPE      DEVICE          
+Wired connection 1  dd44f286-4154-30a4-964f-cfceb493b343  ethernet  enp4s0          
+br-f4451fb13f61     14211a2a-373d-49de-b7ef-e758efea457a  bridge    br-f4451fb13f61 
+cni0                fab9f490-7d00-4b2e-afdc-d67034f797b8  bridge    cni0            
+flannel.1           d1a4cc65-a660-40ad-a2db-d5dd1aa95662  vxlan     flannel.1       
+lo                  5b063d10-db6a-402e-8ea7-b604951e8d5a  loopback  lo              
+docker0             5361f85a-5e56-4e68-977f-3588f5ba889f  bridge    docker0         
+veth089bf14         9ccc77eb-be37-4fae-b1f5-f324247ad9c9  ethernet  veth089bf14     
+veth5f2023ae        0d596138-9253-4ddc-835a-74c9b1c7de40  ethernet  veth5f2023ae    
+veth71089b1         811bb992-ef23-4607-9184-4d68a3202e07  ethernet  veth71089b1     
+veth74abdbb6        6a3b293d-f80a-4ec4-a669-4df354b9cc78  ethernet  veth74abdbb6    
+vethb473b2f4        0fc68b96-0ffa-4232-be80-8ef4f29a4330  ethernet  vethb473b2f4    
+virbr0              a071186a-1185-4c66-8957-0abce355880f  bridge    virbr0          
+virbr3              f7f53f95-2c92-44de-8a68-339c7fab1c5a  bridge    virbr3          

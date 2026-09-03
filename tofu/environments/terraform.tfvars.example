@@ -1,0 +1,29 @@
+# terraform.tfvars.example
+# Copy this file to terraform.tfvars and fill in your values.
+# NEVER commit terraform.tfvars — it contains secrets.
+
+cluster_a_enabled = true
+cluster_b_enabled = true
+
+# Cluster A
+cluster_a_subnet       = "10.21.10.0/24"
+cluster_a_api_vip      = "10.21.10.10"
+cluster_a_cp_count     = 3
+cluster_a_worker_count = 3
+cluster_a_token        = "CHANGE_ME_CLUSTER_A_TOKEN"
+
+# Cluster B
+cluster_b_subnet       = "10.21.20.0/24"
+cluster_b_api_vip      = "10.21.20.10"
+cluster_b_cp_count     = 3
+cluster_b_worker_count = 3
+cluster_b_token        = "CHANGE_ME_CLUSTER_B_TOKEN"
+
+# SSH
+ssh_pubkeys = []
+
+# VM password (for debian and root users)
+vm_password = "CHANGE_ME"
+
+# K3s
+k3s_version = "v1.31.4+k3s1"

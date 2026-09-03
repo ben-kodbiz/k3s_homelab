@@ -1,0 +1,64 @@
+#cloud-config
+# K3s agent node: base OS prep + K3s agent install.
+# Joins the cluster using the token and first server's IP.
+hostname: ${hostname}
+fqdn: ${fqdn}
+create_hostname_file: true
+manage_etc_hosts: true
+
+package_update: true
+package_upgrade: false
+packages:
+  - openssh-server
+  - jq
+  - curl
+  - socat
+  - conntrack
+  - net-tools
+  - htop
+  - chrony
+  - gnupg
+
+ssh_pwauth: true
+disable_root: false
+password: ${vm_password}
+chpasswd:
+  expire: false
+ssh_authorized_keys:
+%{ for key in ssh_pubkeys ~}  - ${key}
+%{ endfor ~}
+
+write_files:
+  - path: /etc/modules-load.d/k8s.conf
+    content: |
+      overlay
+      br_netfilter
+  - path: /etc/sysctl.d/99-k8s.conf
+    content: |
+      net.bridge.bridge-nf-call-iptables  = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.ipv4.ip_forward                 = 1
+  - path: /etc/k3s-lab/env
+    permissions: "0644"
+    content: |
+      K3S_VERSION=${k3s_version}
+      CLUSTER_TOKEN=${cluster_token}
+      API_VIP=${api_vip}
+      NODE_IP=${node_ip}
+      ROLE=${role}
+
+runcmd:
+  - systemctl enable --now ssh
+  - systemctl enable --now chrony
+  - modprobe overlay
+  - modprobe br_netfilter
+  - sysctl --system
+  - swapoff -a
+  - sed -ri '/\sswap\s/d' /etc/fstab || true
+  - |
+    # Install K3s agent — joins first server (not VIP, no LB yet)
+    curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="${k3s_version}" sh -s - agent \
+      --server="https://${api_vip}:6443" \
+      --token="${cluster_token}" \
+      --node-ip="${node_ip}" \
+      --advertise-address="${node_ip}"
