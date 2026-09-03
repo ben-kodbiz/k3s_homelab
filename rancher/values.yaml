@@ -1,0 +1,43 @@
+# Rancher Helm Values
+# Usage:
+#   helm upgrade --install rancher rancher-latest/rancher \
+#     --namespace cattle-system \
+#     --values rancher/values.yaml
+
+# Rancher server version
+replicas: 1
+
+# Hostname — must resolve to the Rancher server IP
+hostname: rancher.cluster-a.lab
+
+# Bootstrap password (change on first login)
+bootstrapPassword: admin123
+
+# TLS — use cert-manager managed certificates
+ingress:
+  tls:
+    source: rancher
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "1800"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "1800"
+
+# Resources — keep lightweight for lab
+resources:
+  requests:
+    cpu: 100m
+    memory: 384Mi
+  limits:
+    cpu: 500m
+    memory: 768Mi
+
+# Audit logging
+auditLog:
+  enabled: false
+
+# System default registry (optional)
+systemDefaultRegistry: ""
+
+# Use local cluster as systemDefaultRegistry
+useBundledSystemChart: true
