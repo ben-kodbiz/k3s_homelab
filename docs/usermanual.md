@@ -20,6 +20,7 @@
 - [Stage 12: High Availability & Failure Testing](#stage-12-high-availability--failure-testing)
 - [Stage 13: Daily K8s Engineer Simulation](#stage-13-daily-k8s-engineer-simulation)
 - [Stage 14: Expert Scenarios & Advanced Topics](#stage-14-expert-scenarios--advanced-topics)
+- [Stage 15: Workstation Tools (k9s, kubectx, kubens)](#stage-15-workstation-tools-k9s-kubectx-kubens)
 - [Troubleshooting Guide](#troubleshooting-guide)
 - [Reference Appendix](#reference-appendix)
 
@@ -49,6 +50,7 @@ By the time you complete all 14 stages, you will be able to:
 - Test high availability and failure recovery
 - Perform daily Kubernetes engineer tasks
 - Handle advanced debugging and performance tuning
+- Use workstation tools (k9s, kubectx, kubens) for efficient operations
 
 ## Prerequisites
 
@@ -2331,6 +2333,308 @@ cd /mnt/AI/dev/k3slab
 | API unreachable | Check kubeconfig | `systemctl status k3s` |
 | Node NotReady | SSH to node, `systemctl status k3s-agent` | `journalctl -u k3s-agent -f` |
 | PVC Pending | `kubectl describe pvc <name>` | `kubectl get storageclass` |
+
+---
+
+# Stage 15: Workstation Tools (k9s, kubectx, kubens)
+
+This stage covers essential workstation tools for efficient Kubernetes operations.
+
+## 15.1 Overview of Installed Tools
+
+| Tool | Purpose | Location |
+|------|---------|----------|
+| **k9s** | Terminal dashboard for K8s | `~/.local/bin/k9s` |
+| **kubectx** | Switch kubectl contexts | `~/.local/bin/kubectx` |
+| **kubens** | Switch namespaces | `~/.local/bin/kubens` |
+| **kubectl** | K8s CLI | `/snap/bin/kubectl` |
+
+## 15.2 PATH Configuration
+
+Add to `~/.zshrc` or `~/.bashrc`:
+
+```bash
+# k8s tools (k9s, kubectx, kubens)
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Verify installation:
+
+```bash
+which k9s kubectx kubens
+```
+
+## 15.3 k9s — Terminal Dashboard
+
+### Launch k9s
+
+```bash
+k9s
+```
+
+### Navigation
+
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` | Navigate up/down |
+| `Enter` | Select item / drill down |
+| `Esc` | Go back one level |
+| `:` | Command mode (type command) |
+| `/` | Filter/search |
+| `Ctrl-C` | Exit k9s |
+
+### Useful Commands in k9s
+
+Press `:` then type:
+
+| Command | Description |
+|---------|-------------|
+| `pods` | List all pods |
+| `deployments` | List all deployments |
+| `services` | List all services |
+| `nodes` | List all nodes |
+| `ns` | List namespaces |
+| `rbac` | View RBAC resources |
+| `sa` | Service accounts |
+| `roles` | Cluster roles |
+| `events` | Cluster events |
+| `logs` | View logs |
+| `describe` | Describe selected resource |
+
+### k9s for RBAC
+
+```bash
+# Launch k9s
+k9s
+
+# View RBAC resources
+: rbac
+
+# View service accounts
+: sa
+
+# View cluster roles
+: clusterroles
+
+# View cluster role bindings
+: clusterrolebindings
+```
+
+### k9s for Debugging
+
+```bash
+# Launch k9s
+k9s
+
+# Filter pods by namespace
+/ <namespace>
+
+# View pod logs
+l
+
+# Execute into pod
+s
+
+# Describe pod
+d
+
+# View pod YAML
+y
+
+# View pod events
+e
+```
+
+### k9s Multi-Cluster
+
+```bash
+# Switch context in k9s
+k9s --context cluster-a
+k9s --context cluster-b
+
+# Or use Ctrl-A to switch contexts while k9s is running
+```
+
+## 15.4 kubectx — Context Switching
+
+### List Contexts
+
+```bash
+kubectx
+# Output:
+# cluster-a
+# cluster-b
+```
+
+### Switch Context
+
+```bash
+kubectx cluster-a
+# Switched to context "cluster-a"
+
+kubectx cluster-b
+# Switched to context "cluster-b"
+```
+
+### Rename Context
+
+```bash
+kubectx cluster-a=production
+```
+
+### Delete Context
+
+```bash
+kubectx -d old-context
+```
+
+### Use with kubectl
+
+```bash
+# Current context
+kubectl config current-context
+
+# List all contexts
+kubectl config get-contexts
+
+# Use specific context
+kubectl --context=cluster-a get pods
+```
+
+## 15.5 kubens — Namespace Switching
+
+### List Namespaces
+
+```bash
+kubens
+# Output:
+# argocd
+# cilium-secrets
+# default
+# headlamp
+# kube-node-lease
+# kube-public
+# kube-system
+# monitoring
+```
+
+### Switch Namespace
+
+```bash
+kubens monitoring
+# Switched to namespace "monitoring"
+
+kubens kube-system
+# Switched to namespace "kube-system"
+
+kubens default
+# Switched to namespace "default"
+```
+
+### Use with kubectl
+
+```bash
+# Set namespace for current context
+kubectl config set-context --current --namespace=monitoring
+
+# Use namespace flag
+kubectl -n monitoring get pods
+kubectl -n kube-system get pods
+```
+
+## 15.6 Common Workflows
+
+### Workflow 1: Quick Cluster Check
+
+```bash
+# Check current context and namespace
+kubectx
+kubens
+
+# View all pods
+kubens
+# Select a namespace
+kubectl get pods
+```
+
+### Workflow 2: Debug Pod Issues
+
+```bash
+# Launch k9s
+k9s
+
+# Find namespace
+: ns
+# Select namespace
+
+# Find pod
+/ pod-name
+
+# View logs
+l
+
+# Execute into pod
+s
+```
+
+### Workflow 3: RBAC Audit
+
+```bash
+# Launch k9s
+k9s
+
+# View RBAC
+: rbac
+
+# Or use kubectl
+kubectl auth can-i --list
+kubectl auth can-i create pods -n monitoring
+```
+
+### Workflow 4: Multi-Cluster Operations
+
+```bash
+# Switch to cluster-a
+kubectx cluster-a
+kubens default
+
+# Check nodes
+kubectl get nodes
+
+# Switch to cluster-b
+kubectx cluster-b
+kubens default
+
+# Check nodes
+kubectl get nodes
+```
+
+## 15.7 Headlamp — Web UI
+
+Headlamp is deployed on Cluster A for visual cluster management.
+
+### Access
+
+- **URL**: `http://10.21.10.11:32437`
+- **Login**: Use token (see `kubectl create token headlamp -n headlamp`)
+
+### Features
+
+- Visual pod/deployment management
+- RBAC viewer
+- Resource usage graphs
+- Log viewer
+- Event viewer
+
+### Create Login Token
+
+```bash
+# Generate new token
+kubectl create token headlamp -n headlamp --duration=87600h
+
+# Or get existing token
+kubectl -n headlamp get secret headlamp -o jsonpath='{.data.token}' | base64 -d
+```
 
 ---
 
