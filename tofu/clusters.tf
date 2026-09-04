@@ -23,8 +23,8 @@ module "cluster_a" {
   cluster_token       = var.cluster_a_token
   vm_password         = var.vm_password
 
-  control_plane_memory_mb = var.control_plane_memory_mb
-  control_plane_vcpu      = var.control_plane_vcpu
+  control_plane_memory_mb = coalesce(var.cluster_a_control_plane_memory_mb, var.control_plane_memory_mb)
+  control_plane_vcpu      = coalesce(var.cluster_a_control_plane_vcpu, var.control_plane_vcpu)
   control_plane_disk_gb   = var.control_plane_disk_gb
   worker_memory_mb        = var.worker_memory_mb
   worker_vcpu             = var.worker_vcpu

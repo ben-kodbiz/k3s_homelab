@@ -60,5 +60,4 @@ runcmd:
     curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="${k3s_version}" sh -s - agent \
       --server="https://${api_vip}:6443" \
       --token="${cluster_token}" \
-      --node-ip="${node_ip}" \
-      --advertise-address="${node_ip}"
+      --node-ip="${node_ip}"

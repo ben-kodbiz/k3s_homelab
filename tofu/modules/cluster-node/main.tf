@@ -40,6 +40,7 @@ ethernets:
     tls_san         = var.api_vip
     is_first_server = var.is_first_server
     server_url      = var.server_url
+    vm_password     = var.vm_password
   })
 }
 

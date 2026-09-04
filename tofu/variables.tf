@@ -113,6 +113,16 @@ variable "worker_vcpu" {
   default = 2
 }
 
+variable "cluster_a_control_plane_vcpu" {
+  type    = number
+  default = null
+}
+
+variable "cluster_a_control_plane_memory_mb" {
+  type    = number
+  default = null
+}
+
 variable "cluster_a_token" {
   type      = string
   sensitive = true
