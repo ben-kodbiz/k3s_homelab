@@ -66,11 +66,14 @@ By the time you complete all 14 stages, you will be able to:
 | Physical Host | 1 | AMD Ryzen 5 5600G, 64GB RAM, 901GB NVMe |
 | Virtual Machines | 12 | 6 per cluster (3 control-plane + 3 worker) |
 | Kubernetes Clusters | 2 | Cluster A (10.21.10.0/24) + Cluster B (10.21.20.0/24) |
-| CNI | — | Cilium v1.17.6 |
+| CNI | — | Cilium v1.20.1 |
+| Ingress | — | NGINX Ingress Controller v1.15.1 |
 | Package Manager | — | Helm v3.21.4 |
 | GitOps | — | Argo CD v3.5.2 |
 | Monitoring | — | Prometheus + Grafana |
 | Storage | — | local-path-provisioner v0.0.31 |
+| Stateful Apps | — | PostgreSQL 18.6.0, Redis 8.10.1 |
+| Web UI | — | Headlamp v0.45.0 |
 
 ---
 
@@ -2669,6 +2672,10 @@ kubectl -n headlamp get secret headlamp -o jsonpath='{.data.token}' | base64 -d
 | Grafana (B) | `http://10.21.20.11:3000` | admin | (set in terraform.tfvars) |
 | Prometheus (A) | `http://10.21.10.11:9090` | — | — |
 | Prometheus (B) | `http://10.21.20.11:9090` | — | — |
+| NGINX Ingress (A) | `http://10.21.10.11:31248` | — | — |
+| Headlamp (A) | `http://10.21.10.11:32437` | — | (token) |
+| PostgreSQL (A) | `postgresql.databases.svc:5432` | postgres | kube123 |
+| Redis (A) | `redis-master.databases.svc:6379` | — | kube123 |
 
 ## C. Network Ranges
 
@@ -2707,9 +2714,13 @@ kubectl -n headlamp get secret headlamp -o jsonpath='{.data.token}' | base64 -d
 
 | Chart | Version | Repository |
 |-------|---------|------------|
-| Cilium | 1.17.6 | cilium |
+| Cilium | 1.20.1 | cilium |
 | Argo CD | 3.5.2 | argo |
 | kube-prometheus-stack | latest | prometheus-community |
+| ingress-nginx | 4.15.1 | ingress-nginx |
+| headlamp | 0.45.0 | headlamp |
+| postgresql | 18.8.17 | bitnami |
+| redis | 28.0.15 | bitnami |
 
 ## F. File Locations
 

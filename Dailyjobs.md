@@ -4,8 +4,10 @@
 - **Cluster A**: `10.21.10.11` (3 servers + 3 workers)
 - **Cluster B**: `10.21.20.11` (3 servers + 3 workers)
 - **CNI**: Cilium
-- **Ingress**: None (use NodePort/LoadBalancer)
+- **Ingress**: NGINX Ingress Controller (NodePort HTTP 31248 / HTTPS 32386)
 - **Storage**: local-path-provisioner
+- **Stateful Apps**: PostgreSQL (databases namespace), Redis (databases namespace)
+- **RBAC**: db-admin, monitoring-reader ServiceAccounts
 - **SSH**: `ssh debian@10.21.10.{11-23}`
 
 ---
@@ -1262,17 +1264,507 @@ kubectl get nodes
 
 ---
 
+---
+
+## Part 10: Ingress & HTTP Routing (46-50)
+
+### Scenario 46: Create an Ingress Resource
+**Objective**: Route external HTTP traffic to a service
+
+```yaml
+# save as ingress-demo.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: nginx.lab.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nginx-svc
+            port:
+              number: 80
+```
+
+```bash
+# First, create the backend service
+kubectl create deployment nginx --image=nginx:alpine
+kubectl expose deployment nginx --port=80 --name=nginx-svc
+
+# Apply Ingress
+kubectl apply -f ingress-demo.yaml
+
+# Test from workstation
+curl -H "Host: nginx.lab.local" http://10.21.10.11:31248
+
+# Check Ingress status
+kubectl get ingress nginx-ingress
+kubectl describe ingress nginx-ingress
+```
+
+---
+
+### Scenario 47: Path-Based Routing
+**Objective**: Route different paths to different services
+
+```yaml
+# save as path-routing.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: path-routing
+  namespace: default
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 80
+      - path: /web
+        pathType: Prefix
+        backend:
+          service:
+            name: web-service
+            port:
+              number: 80
+```
+
+```bash
+kubectl apply -f path-routing.yaml
+kubectl describe ingress path-routing
+```
+
+---
+
+### Scenario 48: Inspect NGINX Ingress Controller Logs
+**Objective**: Debug ingress issues
+
+```bash
+# View controller logs
+kubectl -n ingress-nginx logs -l app.kubernetes.io/name=ingress-nginx --tail=50
+
+# Check specific ingress
+kubectl -n ingress-nginx logs -l app.kubernetes.io/name=ingress-nginx | grep "nginx-ingress"
+
+# View nginx config
+kubectl -n ingress-nginx exec -it $(kubectl -n ingress-nginx get pods -l app.kubernetes.io/name=ingress-nginx -o name) -- cat /etc/nginx/nginx.conf | head -50
+```
+
+---
+
+### Scenario 49: Delete Ingress and Backend
+**Objective**: Clean up ingress resources
+
+```bash
+kubectl delete ingress nginx-ingress path-routing
+kubectl delete svc nginx-svc api-service web-service
+kubectl delete deployment nginx
+```
+
+---
+
+### Scenario 50: Test Ingress with Database Access
+**Objective**: Route traffic to PostgreSQL via Ingress
+
+```yaml
+# save as db-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: postgresql-ingress
+  namespace: databases
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /postgres
+        pathType: Prefix
+        backend:
+          service:
+            name: postgresql
+            port:
+              number: 5432
+```
+
+```bash
+kubectl apply -f db-ingress.yaml
+kubectl -n databases get ingress
+```
+
+---
+
+## Part 11: StatefulSets & Databases (51-55)
+
+### Scenario 51: Connect to PostgreSQL
+**Objective**: Access the deployed PostgreSQL database
+
+```bash
+# Connect to PostgreSQL
+kubectl run postgresql-client --rm --tty -i --restart='Never' \
+  --namespace databases \
+  --image registry-1.docker.io/bitnami/postgresql:latest \
+  --env="PGPASSWORD=kube123" \
+  --command -- psql --host postgresql -U postgres -d learning -p 5432
+
+# Inside psql:
+# \l          -- list databases
+# \dt         -- list tables
+# CREATE TABLE test (id SERIAL PRIMARY KEY, name TEXT);
+# INSERT INTO test (name) VALUES ('hello');
+# SELECT * FROM test;
+# \q
+```
+
+---
+
+### Scenario 52: Connect to Redis
+**Objective**: Access the deployed Redis instance
+
+```bash
+# Connect to Redis master
+kubectl run redis-client --rm --tty -i --restart='Never' \
+  --namespace databases \
+  --image registry-1.docker.io/bitnami/redis:latest \
+  --command -- bash
+
+# Inside the pod:
+# REDISCLI_AUTH="kube123" redis-cli -h redis-master
+#
+# > SET mykey "hello"
+# > GET mykey
+# > KEYS *
+# > INFO
+# > EXIT
+```
+
+---
+
+### Scenario 53: Check PVC and Data Persistence
+**Objective**: Verify data persists across pod restarts
+
+```bash
+# Write data to PostgreSQL
+kubectl run pg-write --rm --tty -i --restart='Never' \
+  --namespace databases \
+  --image registry-1.docker.io/bitnami/postgresql:latest \
+  --env="PGPASSWORD=kube123" \
+  --command -- psql --host postgresql -U postgres -d learning -c "CREATE TABLE IF NOT EXISTS persist_test (id SERIAL, msg TEXT); INSERT INTO persist_test (msg) VALUES ('data survives restart');"
+
+# Delete the pod
+kubectl delete pod postgresql-0 -n databases
+
+# Wait for pod to restart
+kubectl -n databases get pods -w
+
+# Verify data still exists
+kubectl run pg-read --rm --tty -i --restart='Never' \
+  --namespace databases \
+  --image registry-1.docker.io/bitnami/postgresql:latest \
+  --env="PGPASSWORD=kube123" \
+  --command -- psql --host postgresql -U postgres -d learning -c "SELECT * FROM persist_test;"
+```
+
+---
+
+### Scenario 54: Scale Redis Replicas
+**Objective**: Add or remove Redis read replicas
+
+```bash
+# Check current replicas
+kubectl -n databases get pods -l app.kubernetes.io/name=redis
+
+# Scale down to 2 replicas
+kubectl -n databases statefulset redis-replicas --replicas=2
+
+# Wait for scale down
+kubectl -n databases get pods -l app.kubernetes.io/name=redis -w
+
+# Scale back up to 3
+kubectl -n databases statefulset redis-replicas --replicas=3
+
+# Verify
+kubectl -n databases get pods -l app.kubernetes.io/name=redis
+```
+
+---
+
+### Scenario 55: Monitor Database Resources
+**Objective**: Check database resource usage
+
+```bash
+# Check pod resource usage
+kubectl -n databases top pods
+
+# Check PVC usage
+kubectl -n databases get pvc
+
+# Check database connections
+kubectl run pg-monitor --rm --tty -i --restart='Never' \
+  --namespace databases \
+  --image registry-1.docker.io/bitnami/postgresql:latest \
+  --env="PGPASSWORD=kube123" \
+  --command -- psql --host postgresql -U postgres -d learning -c "SELECT count(*) FROM pg_stat_activity;"
+```
+
+---
+
+## Part 12: Network Policies (56-60)
+
+### Scenario 56: Verify Default Deny
+**Objective**: Confirm that default-deny blocks traffic
+
+```bash
+# Check existing policies
+kubectl -n databases get networkpolicies
+
+# Test: try to connect to PostgreSQL from a different namespace
+kubectl run test-blocked --rm --tty -i --restart='Never' \
+  --namespace default \
+  --image busybox \
+  --command -- wget -qO- --timeout=5 postgresql.databases.svc:5432
+
+# Should timeout or be blocked
+```
+
+---
+
+### Scenario 57: Test NetworkPolicy Allow Rules
+**Objective**: Verify allowed traffic works
+
+```bash
+# Test: connect to PostgreSQL from monitoring namespace (allowed)
+kubectl run test-allowed --rm --tty -i --restart='Never' \
+  --namespace monitoring \
+  --image busybox \
+  --command -- nc -zv postgresql.databases.svc 5432
+
+# Should succeed
+```
+
+---
+
+### Scenario 58: Add Custom NetworkPolicy
+**Objective**: Create a new policy to allow traffic from a specific namespace
+
+```yaml
+# save as allow-web-to-db.yaml
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-web-to-postgresql
+  namespace: databases
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: default
+    toPorts:
+    - ports:
+      - port: "5432"
+        protocol: TCP
+```
+
+```bash
+kubectl apply -f allow-web-to-db.yaml
+kubectl -n databases get networkpolicies
+```
+
+---
+
+### Scenario 59: Debug NetworkPolicy Issues
+**Objective**: Diagnose why traffic is blocked
+
+```bash
+# Check Cilium policies
+kubectl -n kube-system exec -it $(kubectl -n kube-system get pods -l k8s-app=cilium -o name | head -1) -- cilium policy get
+
+# Check if policy is applied to pods
+kubectl -n databases get pods -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.metadata.labels}{"\n"}{end}'
+
+# Check endpoints
+kubectl -n databases get endpoints postgresql
+```
+
+---
+
+### Scenario 60: Remove NetworkPolicy
+**Objective**: Delete a policy and restore traffic
+
+```bash
+kubectl -n databases delete networkpolicy allow-web-to-postgresql
+kubectl -n databases get networkpolicies
+```
+
+---
+
+## Part 13: RBAC & Security (61-65)
+
+### Scenario 61: Use db-admin ServiceAccount
+**Objective**: Test full access in databases namespace
+
+```bash
+# Create token for db-admin
+TOKEN=$(kubectl -n databases create token db-admin --duration=87600h)
+
+# Use token to access cluster
+kubectl --token=$TOKEN -n databases get pods
+kubectl --token=$TOKEN -n databases get secrets
+kubectl --token=$TOKEN -n databases delete pod test-pod  # should work
+
+# Test: try to access kube-system (should fail)
+kubectl --token=$TOKEN -n kube-system get pods 2>&1
+```
+
+---
+
+### Scenario 62: Use monitoring-reader ServiceAccount
+**Objective**: Test read-only access
+
+```bash
+# Create token for monitoring-reader
+TOKEN=$(kubectl -n databases create token monitoring-reader --duration=87600h)
+
+# Test: read-only access (should work)
+kubectl --token=$TOKEN -n databases get pods
+kubectl --token=$TOKEN -n databases get svc
+
+# Test: write access (should fail)
+kubectl --token=$TOKEN -n databases create deployment test --image=nginx 2>&1
+kubectl --token=$TOKEN -n databases delete pod postgresql-0 2>&1
+```
+
+---
+
+### Scenario 63: Create Custom Role
+**Objective**: Define custom permissions for a new team
+
+```yaml
+# save as dev-team-role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: dev-team-role
+  namespace: default
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "configmaps"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+```
+
+```bash
+kubectl apply -f dev-team-role.yaml
+kubectl -n default get roles
+```
+
+---
+
+### Scenario 64: Bind Role to User
+**Objective**: Grant permissions to a user or group
+
+```yaml
+# save as dev-team-binding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dev-team-binding
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: dev-team-sa
+  namespace: default
+roleRef:
+  kind: Role
+  name: dev-team-role
+  apiGroup: rbac.authorization.k8s.io
+```
+
+```bash
+kubectl apply -f dev-team-binding.yaml
+kubectl -n default get rolebindings
+```
+
+---
+
+### Scenario 65: Audit RBAC Permissions
+**Objective**: Check what a user/serviceaccount can do
+
+```bash
+# Check permissions for db-admin
+kubectl auth can-i --list --as=system:serviceaccount:databases:db-admin -n databases
+
+# Check specific permission
+kubectl auth can-i create pods -n databases --as=system:serviceaccount:databases:db-admin
+kubectl auth can-i delete pods -n kube-system --as=system:serviceaccount:databases:db-admin
+
+# List all bindings
+kubectl get rolebindings -A
+kubectl get clusterrolebindings | grep -v "system:"
+```
+
+---
+
+## Part 14: Cleanup (66-67)
+
+### Scenario 66: Clean Up Test Resources
+**Objective**: Remove all test deployments, services, and ingresses
+
+```bash
+# Remove test resources
+kubectl delete deployment nginx api web
+kubectl delete svc nginx-svc api-service web-service
+kubectl delete ingress nginx-ingress path-routing postgresql-ingress
+kubectl delete networkpolicy allow-web-to-postgresql -n databases
+kubectl delete role dev-team-role -n default
+kubectl delete rolebinding dev-team-binding -n default
+```
+
+---
+
+### Scenario 67: Verify Lab State
+**Objective**: Confirm lab is clean and ready for next exercise
+
+```bash
+kubectl get all -A | grep -v "kube-system\|monitoring\|argocd\|headlamp\|ingress-nginx\|databases"
+kubectl get networkpolicies -A
+kubectl get roles,rolebindings -A | grep -v "kube-system\|monitoring\|argocd\|ingress-nginx"
+```
+
+---
+
 ## Learning Path
 
 **Beginner (Scenarios 1-15)**: Core concepts, pods, deployments
 **Intermediate (Scenarios 16-35)**: Services, storage, RBAC, networking
 **Advanced (Scenarios 36-45)**: Debugging, monitoring, cluster operations
+**Stateful Apps (Scenarios 46-60)**: Ingress, databases, network policies, RBAC
 
 ## Next Steps
 
 After completing all scenarios:
-1. Deploy a real application (nginx + database)
-2. Set up monitoring (Prometheus + Grafana)
-3. Implement CI/CD (ArgoCD)
+1. ✅ Deploy a real application (nginx + database) — DONE
+2. ✅ Set up monitoring (Prometheus + Grafana) — DONE
+3. ✅ Implement CI/CD (ArgoCD) — DONE
 4. Practice failure scenarios (node failure, pod eviction)
 5. Explore Cilium advanced features (Hubble, service mesh)
